@@ -17,6 +17,16 @@ public class Keyframe implements Serializable {
 		secondary = new byte[chunks][49152];
 	}
 
+	private Keyframe(byte[] blocks, byte[][] secondary) {
+		this.blocks = new byte[blocks.length];
+		System.arraycopy(blocks, 0, this.blocks, 0, blocks.length);
+		this.secondary = new byte[secondary.length][secondary[0].length];
+		for (int i = 0; i < secondary.length; i++) {
+			System.arraycopy(secondary[i], 0, this.secondary[i], 0,
+					secondary[i].length);
+		}
+	}
+
 	public Update update(Chunk[] chunks) {
 		Update update = new Update();
 		int i = 0;
@@ -29,6 +39,11 @@ public class Keyframe implements Serializable {
 						byte block = (byte) snapshot.getBlockTypeId(x, y, z);
 						if (blocks[i] != block) {
 							blocks[i] = block;
+							update.addBlockChange(i, block,
+									(byte) snapshot.getBlockData(x, y, z));
+						} else if (getNibble(
+								secondary[i / 32768][i % 32768 / 2], i % 2) != snapshot
+								.getBlockData(x, y, z)) {
 							update.addBlockChange(i, block,
 									(byte) snapshot.getBlockData(x, y, z));
 						}
@@ -45,11 +60,22 @@ public class Keyframe implements Serializable {
 		return update;
 	}
 
+	private byte getNibble(byte b, int position) {
+		if (position == 0)
+			return (byte) (b >>> 4);
+		return (byte) (b & 0xf);
+	}
+
 	public byte[] getBlockData() {
 		return blocks;
 	}
 
 	public byte[][] getSecondaryData() {
 		return secondary;
+	}
+
+	@Override
+	public Keyframe clone() {
+		return new Keyframe(blocks, secondary);
 	}
 }

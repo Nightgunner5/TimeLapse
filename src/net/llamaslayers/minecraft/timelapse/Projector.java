@@ -22,6 +22,8 @@ public class Projector extends Thread {
 	private final Chunk[] chunks;
 	public final int tickInterval;
 	public final int keyframeInterval;
+	private boolean ignoreKeyframes = false;
+	private boolean firstKeyframe = true;
 
 	public Projector(Player player, File recording, PlaybackCommand callback)
 			throws IOException {
@@ -32,7 +34,10 @@ public class Projector extends Thread {
 		this.callback = callback;
 
 		switch (input.readInt()) {
-		case 1: {
+		case 1:
+			ignoreKeyframes = true;
+			// fallthrough
+		case 2: {
 			recordingStartedAt = input.readLong();
 			try {
 				world = (String) input.readObject();
@@ -80,15 +85,20 @@ public class Projector extends Thread {
 			try {
 				Object frame = input.readObject();
 				if (frame instanceof Keyframe) {
-					byte[] blocks = ((Keyframe) frame).getBlockData();
-					byte[][] secondary = ((Keyframe) frame).getSecondaryData();
-					byte[] chunkData = new byte[81920];
-					for (int i = 0; i < chunks.length; i++) {
-						System.arraycopy(blocks, 32768 * i, chunkData, 0, 32768);
-						System.arraycopy(secondary[i], 0, chunkData, 32768,
-								49152);
-						player.sendChunkChange(chunks[i].getBlock(0, 0, 0)
-								.getLocation(), 16, 128, 16, chunkData);
+					if (!ignoreKeyframes || firstKeyframe) {
+						byte[] blocks = ((Keyframe) frame).getBlockData();
+						byte[][] secondary = ((Keyframe) frame)
+								.getSecondaryData();
+						byte[] chunkData = new byte[81920];
+						for (int i = 0; i < chunks.length; i++) {
+							System.arraycopy(blocks, 32768 * i, chunkData, 0,
+									32768);
+							System.arraycopy(secondary[i], 0, chunkData, 32768,
+									49152);
+							player.sendChunkChange(chunks[i].getBlock(0, 0, 0)
+									.getLocation(), 16, 128, 16, chunkData);
+						}
+						firstKeyframe = false;
 					}
 				} else if (frame instanceof Update) {
 					for (UpdateData data : (Update) frame) {
@@ -100,12 +110,11 @@ public class Projector extends Thread {
 				} else
 					throw new IOException();
 			} catch (IOException ex) {
-				ex.printStackTrace();
-				playing = false;
+				stopPlayback();
 				callback.finishedPlayback(player);
 			} catch (ClassNotFoundException ex) {
 				ex.printStackTrace();
-				playing = false;
+				stopPlayback();
 				callback.finishedPlayback(player);
 			}
 		}
@@ -116,6 +125,11 @@ public class Projector extends Thread {
 	}
 
 	public void stopPlayback() {
-		playing = false;
+		if (playing) {
+			playing = false;
+			for (Chunk chunk : chunks) {
+				chunk.getWorld().refreshChunk(chunk.getX(), chunk.getZ());
+			}
+		}
 	}
 }

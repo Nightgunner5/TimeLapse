@@ -1,5 +1,6 @@
 package net.llamaslayers.minecraft.timelapse;
 
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class TimeLapse extends JavaPlugin {
@@ -19,5 +20,10 @@ public class TimeLapse extends JavaPlugin {
 
 		getCommand("record").setExecutor(record = new RecordCommand());
 		getCommand("playback").setExecutor(playback = new PlaybackCommand());
+	}
+
+	public static boolean isPlayerDoingSomething(Player player) {
+		return instance.record.cameras.containsKey(player)
+				|| instance.playback.playing.containsKey(player);
 	}
 }

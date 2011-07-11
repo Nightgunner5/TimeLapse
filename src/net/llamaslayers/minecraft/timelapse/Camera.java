@@ -39,7 +39,7 @@ public class Camera implements Runnable {
 				.scheduleAsyncRepeatingTask(TimeLapse.instance, this, 0, ticks);
 
 		try {
-			output.writeInt(1); // Version number
+			output.writeInt(2); // Version number
 			output.writeLong(System.currentTimeMillis());
 			output.writeObject(world.getName());
 			output.writeInt(chunkX);

@@ -17,7 +17,7 @@ public class Snapshot {
 	}
 
 	public Keyframe getKeyframe() {
-		return currentState;
+		return currentState.clone();
 	}
 
 	public Update getUpdate() {

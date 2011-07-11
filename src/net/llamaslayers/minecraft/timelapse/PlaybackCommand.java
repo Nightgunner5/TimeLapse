@@ -10,7 +10,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class PlaybackCommand implements CommandExecutor {
-	private final HashMap<Player, Projector> playing = new HashMap<Player, Projector>();
+	protected final HashMap<Player, Projector> playing = new HashMap<Player, Projector>();
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command,
@@ -20,6 +20,10 @@ public class PlaybackCommand implements CommandExecutor {
 			return true;
 		}
 		Player player = (Player) sender;
+		//if (!player.hasPermission("timelapse.playback")) {
+		//	player.sendMessage("You do not have permission to use this command.");
+		//	return true;
+		//}
 
 		if (args.length == 0)
 			return false;
@@ -27,6 +31,11 @@ public class PlaybackCommand implements CommandExecutor {
 		if (args[0].equalsIgnoreCase("start")) {
 			if (playing.containsKey(player)) {
 				player.sendMessage("You are already playing back a recording.");
+				return true;
+			}
+			if (TimeLapse.isPlayerDoingSomething(player)) {
+				player.sendMessage("You cannot record and play back at the same time.");
+				return true;
 			}
 
 			if (args.length != 2)
@@ -58,6 +67,7 @@ public class PlaybackCommand implements CommandExecutor {
 			try {
 				playing.get(player).setSpeed(
 						Double.parseDouble(args[1]) / 100.0);
+				return true;
 			} catch (NumberFormatException ex) {
 				return false;
 			} catch (IllegalArgumentException ex) {
@@ -74,9 +84,9 @@ public class PlaybackCommand implements CommandExecutor {
 				return false;
 
 			try {
-				playing.remove(player).stopPlayback();
-			} catch (NumberFormatException ex) {
-				return false;
+				playing.get(player).stopPlayback();
+				playing.remove(player);
+				return true;
 			} catch (IllegalArgumentException ex) {
 				return false;
 			}

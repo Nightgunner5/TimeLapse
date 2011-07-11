@@ -8,20 +8,21 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class RecordCommand implements CommandExecutor {
-	private final HashMap<Player, Camera> cameras = new HashMap<Player, Camera>();
+	protected final HashMap<Player, Camera> cameras = new HashMap<Player, Camera>();
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command,
 			String label, String[] args) {
-		if (!sender.isOp()) {
-			sender.sendMessage("This command can only be used by OPs.");
-			return true;
-		}
 		if (!(sender instanceof Player)) {
 			sender.sendMessage("This command can only be used by players.");
 			return true;
 		}
 		Player player = (Player) sender;
+		//if (!player.hasPermission("timelapse.record")) {
+		if (!player.isOp()) {
+			player.sendMessage("You do not have permission to use this command.");
+			return true;
+		}
 
 		if (args.length == 0)
 			return false;
@@ -37,6 +38,14 @@ public class RecordCommand implements CommandExecutor {
 			return true;
 		}
 		if (args[0].equalsIgnoreCase("start")) {
+			if (cameras.containsKey(player)) {
+				player.sendMessage("You are already recording!");
+				return true;
+			}
+			if (TimeLapse.isPlayerDoingSomething(player)) {
+				player.sendMessage("You cannot record and play back at the same time.");
+				return true;
+			}
 			int radius = 1;
 			if (args.length > 1) {
 				try {
@@ -70,9 +79,9 @@ public class RecordCommand implements CommandExecutor {
 
 			int playerchunkX = player.getLocation().getBlockX() / 16;
 			int playerchunkZ = player.getLocation().getBlockZ() / 16;
-			Camera camera = new Camera(player.getWorld(), playerchunkX - radius
-					+ 1, playerchunkZ - radius + 1, radius * 2 - 1,
-					radius * 2 - 1, ticks, keyframeEvery);
+			Camera camera = new Camera(player.getWorld(),
+					playerchunkX - radius, playerchunkZ - radius,
+					radius * 2 - 1, radius * 2 - 1, ticks, keyframeEvery);
 			cameras.put(player, camera);
 			player.sendMessage("Recording started with ID "
 					+ camera.getRecordingId() + ".");
