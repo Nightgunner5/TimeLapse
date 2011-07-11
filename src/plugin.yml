@@ -1,0 +1,15 @@
+name: TimeLapse
+main: net.llamaslayers.minecraft.timelapse.TimeLapse
+version: 0.1
+description: Make 3d recordings of complicated build operations and play them back at any speed
+author: Nightgunner5
+commands:
+    record:
+        usage: |
+            /record stop
+            /record start [chunk radius] [ticks per frame] [frames per keyframe]
+    playback:
+        usage: |
+            /playback stop
+            /playback start <recording ID>
+            /playback speed <percent>
